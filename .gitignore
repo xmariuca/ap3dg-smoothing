@@ -1,0 +1,11 @@
+# Ignore the build dir
+build
+
+# Ignore any executables and figures
+bin/*
+doc/figures/*
+
+# Ignore Mac specific files
+.DS_Store
+src/.DS_Store
+src/plyMeshes/*

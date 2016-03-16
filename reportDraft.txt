@@ -1,0 +1,8 @@
+TO DO
+- sparse matrix for the laplacian and the scaling matrix
+- get the normals with openMesh
+- get the laplace bertrami operator - polymesh book
+- improve scaling with area - cross product of vetors?
+
+- H and K at each vertex -> principal components
+- colour the vertices according to a gradient based on these values
