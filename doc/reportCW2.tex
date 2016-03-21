@@ -118,9 +118,9 @@
 
 \setcounter{secnumdepth}{0} % Removes default section numbers
 \newcounter{homeworkProblemCounter} % Creates a counter to keep track of the number of problems
-\setcounter{homeworkProblemCounter}{1}
+\setcounter{homeworkProblemCounter}{0}
 \newcommand{\homeworkProblemName}{}
-\newenvironment{homeworkProblem}[1][Task \arabic{homeworkProblemCounter}]{ % Makes a new environment called homeworkProblem which takes 1 argument (custom name) but the default is "Problem #"
+\newenvironment{homeworkProblem}[1][Section \arabic{homeworkProblemCounter}]{ % Makes a new environment called homeworkProblem which takes 1 argument (custom name) but the default is "Problem #"
 \stepcounter{homeworkProblemCounter} % Increase counter for number of problems
 \renewcommand{\homeworkProblemName}{#1} % Assign \homeworkProblemName the name of the problem
 \section{\homeworkProblemName} % Make a section in the document with the custom problem count
@@ -146,8 +146,8 @@
 %	NAME AND CLASS SECTION
 %----------------------------------------------------------------------------------------
 
-\newcommand{\hmwkTitle}{Coursework \#1} % Assignment title
-\newcommand{\hmwkDueDate}{Friday,\ February 12,\ 2016} % Due date
+\newcommand{\hmwkTitle}{Coursework \#2} % Assignment title
+\newcommand{\hmwkDueDate}{Friday,\ March 20,\ 2016} % Due date
 \newcommand{\hmwkClass}{COMPM080} % Course/class
 \newcommand{\hmwkAuthorName}{Maria Ruxandra Robu} % Your name
 
@@ -182,65 +182,145 @@
 %\tableofcontents
 \newpage
 
-This coursework covers the Iterative Closest Point algorithm, which was first introduced in \cite{basicICP}. Task 2 describes the structure of the point-to-point approach and discusses the strategies chosen for the implementation. Task 3 analyses the convergence of the algorithm under varying degrees of rotation for the initial alignment. Task 4 analyses the performance under Gaussian noise. Task 5 illustrates how subsampling impacts the results of ICP. Task 6 explores several strategies for multi-body registration. Finally, Task 7 computed the normals for each vertex and uses them in the ICP formulation.
+\textbf{Introduction}\\
+
+The section Discrete Curvature introduces different methods to discretize the Laplacian operator on a mesh. The mean curvature H, Gaussian curvature K and the principal curvatures k1 and k2 are implemented and visualized. These have been obtained from both a uniform Laplacian and a Laplace Beltrami operator.\\
+
+
+The section Laplacian Smoothing shows results for explicit and implicit smoothing of a mesh on a simple cube and a more complex shape. It also discusses smoothing operations in the context of mesh denoising.
+
+
 %----------------------------------------------------------------------------------------
 %	PROBLEM 1
 %----------------------------------------------------------------------------------------
 
 % To have just one problem per page, simply put a \clearpage after each problem
 
-\begin{homeworkProblem}
+\begin{homeworkProblem}[Section 1 - Discrete Curvature]
 
-\textbf{Iterative Closest Point (ICP) algorithm}\\
-
-In this section, the point-to-point ICP algorithm was implemented. Given two meshes with a good initial alignment, the algorithm iteratively finds an optimal rigid transformation that best aligns them. ICP is proven to converge to a good solution. However, without a good initialization, it will fall into local minima. \\
-
-Given two point clouds $p$ and $q$:
+The colour mapping used throughout this section is: 
 \begin{itemize}
-  \item for each $q \in \{q\}_M$ find the closest match in $\{p\}_N$
-  \item reject bad pairs
-  \item center the point clouds at their origin by subtracting their means
-  \item compute the covariance matrix $C$ of the centered $ \tilde{p}$ and $ \tilde{q}$ 
-  \item extract $R$ from the singular value decomposition of $C$ ( $R = V U'$ )
-  \item the translation vector is $t = \bar{p} - R \bar{q}$
-  \item apply the current transformation $q = R q + t$ and start from the beginning
+\item blue for negative values
+\item black for values close to 0
+\item red for positive values
 \end{itemize}
 
+\textbf{1. Uniform Laplacian and mean curvature}\\
+
+The uniform Laplacian operator is implemented after the equation \ref{eq:unifLaplac}.
+\begin{equation}
+\label{eq:unifLaplac}
+\Delta f(v_i) = \frac{1}{|N(v_i)|} * \sum_{v_j \in N(v_i))}(v_j - v_i)
+\end{equation}
+
+After the second derivative is computed at each vertex in the mesh, the mean curvature can be approximated. The mean curvature is in the opposite direction of the normal, so the vertex normals are needed for its estimation. The normals have been computed in MeshLab and imported with the mesh.
+
+\begin{equation}
+\Delta f = -2Hn
+\end{equation}
+
+\begin{equation}
+ H(v_i) = \frac{1}{2}  <\Delta f(v_i), n(v_i)>
+\end{equation}
+
+A scalar value is obtained for each vertex for the mean curvature. Figure \ref{fig:meanCurv} shows the results for the dragon mesh. \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure*}[!h]
 \centering
-\subfloat[]{\includegraphics[height=1.5in]{task2_noAlign_before}%
-\label{fig_t2_noalign_b}}
+\subfloat[]{\includegraphics[height=2.5 in]{meanCurv1}%
+\label{fig_meanCurvUL1}}
 \hfil
-\subfloat[]{\includegraphics[height=1.5in]{task2_noAlign_after}%
-\label{fig_t2_noalign_a}}
-\caption{Task 2 - a) two meshes with no initial alignment; b) registration of two point clouds (27 iterations; error = 0.118)}
-\label{fig:t2_noalign}
+\subfloat[]{\includegraphics[height=2.5 in]{meanCurv2}%
+\label{fig_meanCurvUL2}}
+\vfil
+\subfloat[]{\includegraphics[height=2.5 in]{meanCurvLB1}%
+\label{fig_meanCurvLB1}}
+\hfil
+\subfloat[]{\includegraphics[height=2.5 in]{meanCurvLB2}%
+\label{fig_meanCurvLB2}}
+\caption{Mean Curvature: Top Row - Uniform Laplace; Bottom Row - Laplace Beltrami}
+\label{fig:meanCurv}
 \end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\textbf{2. Gaussian curvature and the principal curvatures}\\
+
+The Gaussian curvature is obtained by computing the angle deficit around each vertex. Figure \ref{fig:gaussianCurv} illustrated the values for the Gaussian curvature on the dragon mesh. As expected, the red values appear in elliptical areas (tips of scales), whereas the blue ones in hyperbolic areas (in saddles). The areas that can be approximated with a plane locally appear as black, with values close to 0.
+
+ \begin{equation}
+ K(v_i) = \frac{1}{A(v_i)} (2 \pi - \sum_{j \in N(v_i)} \theta_j) 
+\end{equation}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure*}[!h]
 \centering
-\subfloat[]{\includegraphics[height=1.5in]{task2_align_before}%
-\label{fig_t2_align_b}}
+\subfloat[]{\includegraphics[height=2.5 in]{gaussianCurv1}%
+\label{fig_gaussianCurv1}}
 \hfil
-\subfloat[]{\includegraphics[height=1.5in]{task2_align_after}%
-\label{fig_t2_align_a}}
-\caption{Task 2 -  a) two meshes with a good initial alignment; b) registration of two point clouds (11 iterations; error = 0.116)}
-\label{fig:t2_align}
+\subfloat[]{\includegraphics[height=2.5 in]{gaussianCurv2}%
+\label{fig_gaussianCurv2}}
+\caption{Gaussian Curvature}
+\label{fig:gaussianCurv}
 \end{figure*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Once the mean and Gaussian curvature have been computed, the principal curvatures k1 and k2 can be calculated using equation \ref{eq:princCurv}.
+
+ \begin{equation}
+ H = \frac{k_1 + k_2}{2}
+\end{equation}
+
+ \begin{equation}
+ K = k_1 k_2
+\end{equation}
+
+ \begin{equation}
+ \label{eq:princCurv}
+ k_{1,2} = H \pm \sqrt{H^2 - K}
+\end{equation}
+
+If the difference under the square root is not positive, the principal curvatures are set to 0. Figure \ref{fig:prinCurv} shows the results for the principal curvatures obtained through the uniform Laplacian versus the ones obtained with the cotangent discretization. The right column shows a better representation of the surface by introducing more detail. \\
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure*}[!h]
+\centering
+\subfloat[]{\includegraphics[height=2 in]{k1_ul}%
+\label{fig_k1ul}}
+\hfil
+\subfloat[]{\includegraphics[height=2 in]{k1_lb}%
+\label{fig_k1lb}}
+\vfil
+\subfloat[]{\includegraphics[height=2 in]{k2_ul}%
+\label{fig_k2ul}}
+\hfil
+\subfloat[]{\includegraphics[height=2 in]{k2_lb}%
+\label{fig_k2lb}}
+\caption{Principal Curvatures: a) Maximum curvature - Uniform Laplacian; b) Maximum curvature - Non-uniform Laplacian; c) Minimum curvature - Uniform Laplacian; b) Minimum curvature - Non-uniform Laplacian }
+\label{fig:prinCurv}
+\end{figure*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Stopping conditions must be set in order to stop the iterations. In this implementation, a maximum number of iterations is set. Furthermore, if two consecutive errors do not change by more than a threshold, the algorithm is considered to have converged. This additional condition shortens the computation time by stopping unnecessary iterations.\\
 
-The most important step of the algorithm is establishing the correspondences between the two point clouds. In the point-to-point approach, the algorithm finds the closest point to the query point by computing the minimum euclidean distance. In this implementation, the bad pairs are rejected through a threshold. For example, if the distance between a current pair of points is more than 50\% of the maximum distance, the pair is discarded. \\
+\textbf{4. Discrete Laplace-Beltrami}\\
 
+The Laplace Beltrami operator is computed using the cotangents of the adjacent angles to a neighbouring vertex as weights. 
 
-The algorithm was implemented in C++ with the use of the libraries: OpenMesh, Eigen and ANN. The .ply objects were loaded into memory with the OpenMesh mesh reader. Eigen was used for the matrix decompositions and operations. ANN was used for finding the correspondences and computing the normals in Task 7. All of the meshes were coloured differently to easily observe the overlapping regions. The meshes are visualized using MeshLab. The matrices used for initial alignment have been obtained from rough manual alignment in MeshLab. \\
+\begin{equation}
+\Delta _s f(v) = \frac{1}{2* A(v_i) }* \sum_{v_j \in N(v_i)}(cotan (\beta_i) + cotan(\alpha_i))(v_j - v_i)
+\end{equation}
 
+ \begin{equation}
+cotan (\alpha) = \frac{<edge1, edge2>} {|| edge1 \wedge edge2 ||}, where || edge1|| = || edge2 ||  = 1
+\end{equation}
 
-The figures \ref{fig:t2_noalign} and \ref{fig:t2_align} illustrate the point-to-point registration for two points clouds. They show two cases which work even without a very good initial alignment, due tothe big overlapping areas. however, in most situations, the algorithm would get stuck into a local minima. 
+The operator is normalized by the area of the barycentric cells, which is 1/3 of the area of a neighbouring triangle.
+\begin{equation}
+A(v_i,v_j,v_{j+1})= \frac{1}{6}|| (v_j - v_i) \wedge (v_{j+1} - v_i)||
+\end{equation}
+
+The mean curvature was recomputed using the Laplace Beltrami operator and the results are shown in figure \ref{fig:meanCurv}. The surface is better represented as the angles surrounding a vertex and the corresponding areas are taken into consideration. For example, flat areas have more values closer to 0 (black), as they should. The principal curvatures have been recalculated and the results are shown in figure \ref{fig:prinCurv}, in the right column.
 
 \end{homeworkProblem}
 \clearpage
@@ -249,11 +329,46 @@ The figures \ref{fig:t2_noalign} and \ref{fig:t2_align} illustrate the point-to-
 %	PROBLEM 2
 %----------------------------------------------------------------------------------------
 
-\begin{homeworkProblem}
+\begin{homeworkProblem}[Section 2 - Laplacian Mesh Smoothing]
 
-\textbf{ICP convergence analysis for different rotations}\\
+\textbf{5. Explicit Laplacian Smoothing}\\
 
-The mesh M1 was centered at its origin by subtracting the mean $\bar{p}$ from all its points $p$, as shown in Figure \ref{fig_t3_m1_centered}. Once its position is set, incremental rotations are applied to the mesh in the x, y and z axes. Figure  \ref{fig_t3_m3_rot} shows an example for 3 rotations along the x axis. Once we have the initial M1 and the rotated M3, ICP is ran for each rotation. Figure \ref{fig_t3_m3_goodAlign} illustrates the results for the 3 rotations in the example. \\
+Explicit Laplacian Smoothing was implemented using the equation \ref{eq:explicitSm}, iteratively, for each vertex in the mesh:
+
+\begin{equation}
+\label{eq:explicitSm}
+v_i  = v_i + \lambda \Delta (v_i)
+\end{equation}
+
+The results for different lambdas and numbers of iterations are presented in figures \ref{fig:explicitSm}. From my experiments, values for  $\lambda$ that are bigger than 1 start adding noise to the initial mesh, like in figure \ref{fig_explicitL2}. \\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure*}[!h]
+\centering
+\subfloat[]{\includegraphics[height=2 in]{explicitL1_5iter}%
+\label{fig_explicitL5}}
+\hfil
+\subfloat[]{\includegraphics[height=2 in]{explicitL1_5iter_diff}%
+\label{fig_explicitL5_diff}}
+\vfil
+\subfloat[]{\includegraphics[height=2 in]{explicitL2_3iter}%
+\label{fig_explicitL2}}
+\hfil
+\subfloat[]{\includegraphics[height=2 in]{explicitL2_3iter_diff}%
+\label{fig_explicitL2_diff}}
+\caption{Explicit Smoothing: a) Lambda = 1, Iterations = 5; b) Difference between the smoothed (yellow) and original (white) mesh; c) Lambda = 2, Iterations = 3; d) Difference between the smoothed (yellow) and original (white) mesh}
+\label{fig:explicitSm}
+\end{figure*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\textbf{6. Implicit Laplacian Smoothing}\\
+
+This restriction can be removed by implementing implicit smoothing. Instead of increasing the smoothing incrementally in small steps, this formulation allows bigger jumps by choosing higher values for $\lambda$.
+
+\begin{equation}
+(I - \lambda \Delta) v_{i+1} = v_{i}
+\end{equation}
+
+The implicit smoothing equation was solved using the bi conjugate gradient stabilized solver (Eigen::BiCGSTAB). Figure \ref{fig:implicitSm} shows results for various setting. As opposed to the explicit smoothing, this implementation does not introduce noise and allows for a more stable result.
 
 %\begin{equation}
 %\tilde{p} = p - \bar{p}
@@ -262,317 +377,88 @@ The mesh M1 was centered at its origin by subtracting the mean $\bar{p}$ from al
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure*}[!h]
 \centering
-\subfloat[]{\includegraphics[height=1.5in]{t3_m1_centered}%
-\label{fig_t3_m1_centered}}
+\subfloat[]{\includegraphics[height=2.5 in]{implicitL5_1iter}%
+\label{fig_implicitL5}}
 \hfil
-\subfloat[]{\includegraphics[height=1.5in]{t3_rotx}%
-\label{fig_t3_m3_rot}}
+\subfloat[]{\includegraphics[height=2.5 in]{implicitL5_1iter_diff}%
+\label{fig_implicitL5_diff}}
+\vfil
+\subfloat[]{\includegraphics[height=2.5 in]{implicitL3_3iter}%
+\label{fig_implicitL3}}
 \hfil
-\subfloat[]{\includegraphics[height=1.5in]{t3_goodresults}%
-\label{fig_t3_m3_goodAlign}}
-\caption{Task 3 - a) M1 centered at its origin; b) 3 Rotations along the x axis; c) the final registration after ICP is ran for case b)}
-\label{fig:t3_intro}
+\subfloat[]{\includegraphics[height=2.5 in]{implicitL3_3iter_diff}%
+\label{fig_implicitL3_diff}}
+\caption{Implicit Smoothing: a) Lambda = 5, Iterations = 1; b) Difference between the smoothed (pink) and original (white) mesh; c) Lambda = 3, Iterations = 3; d) Difference between the smoothed (pink) and original (white) mesh}
+\label{fig:implicitSm}
 \end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-The parameters used for this section are:
-\begin{itemize}
-  \item axes: x, y, z
-  \item number of different rotations =  25
-  \item interval of degrees [-50, 50]
-  \item maximum number of iterations for ICP = 50
-  \item error threshold for ICP = 1e-04
-  \item threshold for the bad points rejection = 70\%
-\end{itemize}
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure*}[!h]
 \centering
-\subfloat[]{\includegraphics[height=1.5in]{task3_xaxis}%
-\label{fig_t3_conv_x}}
+\subfloat[]{\includegraphics[height=2.5 in]{explicitL05_3iter}%
+\label{fig_explicitCube}}
 \hfil
-\subfloat[]{\includegraphics[height=1.5in]{task3_yaxis}%
-\label{fig_t3_conv_y}}
-\hfil
-\subfloat[]{\includegraphics[height=1.5in]{task3_zaxis}%
-\label{fig_t3_conv_z}}
-\caption{Task 3 - Convergence Analysis for the 3 axes of rotation}
-\label{fig:t3_conv}
+\subfloat[]{\includegraphics[height=2.5 in]{implicitCube_L3_3iter}%
+\label{fig_implicitCube}}
+\caption{Cube - Explicit vs. Implicit Smoothing: a) Lambda = 0.5, Iterations = 3; b) Lambda = 3, Iterations = 3 }
+\label{fig:cube}
 \end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-For each iteration, the final error and number of iterations were saved in a file and plotted with Matlab. The figures \ref{fig:t3_conv} show the basins of convergence for the ICP algorithm by varying the rotation angle on the 3 axes. The minimum error obtained (1.48e-11) was for the z axis at -4 degrees and the maximum (33.64) on the y axis for -33 degrees.\\
+These smoothing algorithms have been applied to both simple and complex meshes. Figure \ref{fig:cube} shows the results for a cube. Only the edges have been shown from the original mesh, to provide a comparison to the smoothed cubes. In this case, $\lambda$ has to have even smaller values for the explicit smoothing. If $\lambda = 1$, the cube gets very small and it loses its shape. \\
 
-Figures \ref{fig:t3_conv} clearly show how ICP can get stuck into local minima. For example, if an initial alignment is made with a rotation on the z axis, at around 30 degrees, the algorithm would find close solutions to the starting point. however, it will not jump and find the global solution like in the basin of convergence. 
 
-%\problemAnswer{
-%\begin{center}
-%%\includegraphics[width=0.75\columnwidth]{example_figure} % Example image
-%\end{center}
-%
-%\lipsum[3-5]
-%}
-\end{homeworkProblem}
+These smoothing algorithms have been implemented based on the uniform discretization of the Laplacian. This implementation choice is obvious in the context of the cube, where smoothing makes the object deform. A better approach would be to use the cotangent discretization. Since the Laplace Beltrami operator incorporates information about the normals, the smoothing would preserve more of the initial shape of the objects. \\
+
 \clearpage
-%----------------------------------------------------------------------------------------
+\textbf{7. Denoising experiments}\\
 
-\begin{homeworkProblem}
-
-
-\textbf{ICP convergence analysis with noisy data}\\
-
-In this section, increasing amounts of noise are added to mesh M2  and ICP is computed for each case. In order to generate the graphs in \ref{fig:t4_noisyAnalysis}, noise was added in 15 steps between 1e-04 and 5e-3 standard deviations. 
+Gaussian noise with mean 0 and standard deviation of 0.001 was added to the dragon mesh. The challenge in using Laplacian smoothing to denoise a mesh is in removing the noise whilst at the same time, keeping the high frequency details. Figures \ref{fig:noisy} and \ref{fig:noisy2} show some results for different parameters. Lambda was chosen to be lower than 1 in all the experiments with explicit smoothing, since higher values add more noise. Figures \ref{fig:noisy} b) and d) show a smooth mesh, with loss in the details around the scales and the head of the dragon. \\
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure*}[!h]
 \centering
-\subfloat[]{\includegraphics[height=2in]{t4_noiseBoth}%
-\label{fig_t4_noiseBoth}}
-\caption{Task 4 - Example of bunny with different levels of noise. Orange corresponds to 55e-04 standard deviation and red to 1e-03 standard deviation}
-\label{fig:t4_noisyEx}
-\end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure*}[!h]
-\centering
-\subfloat[]{\includegraphics[height=2.3in]{task4_noiseComp}%
-\label{fig_t4_noisyComp}}
+\subfloat[]{\includegraphics[height=2 in]{noisyDragon}%
+\label{fig_noisyDragonOrig}}
 \hfil
-\subfloat[]{\includegraphics[height=2.3in]{task4_noiseNonoise}%
-\label{fig_t4_noiseNoNoise}}
-\caption{Task 4 - Noise analysis: a) error comparison for increasing amounts of noise; b) shows the error against the number of iterations needed for convergence}
-\label{fig:t4_noisyAnalysis}
+\subfloat[]{\includegraphics[height=2 in]{noisyExplL1_5iter}%
+\label{fig_implicitCube}}
+\vfil
+\subfloat[]{\includegraphics[height=2 in]{noisyImplL3_1iter}%
+\label{fig_noisyDragonOrig}}
+\hfil
+\subfloat[]{\includegraphics[height=2 in]{noisyImplL3_3iter}%
+\label{fig_implicitCube}}
+\caption{ Experiments with noise: a) Noise with std = 0.001 was added to the dragon mesh; b) Explicit Smoothing - $\lambda = 1$, iterations = 5; c) Implicit Smoothing - $\lambda = 3$, iterations = 1; d) Implicit Smoothing - $\lambda = 3$, iterations = 3}
+\label{fig:noisy}
 \end{figure*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+In order to decrease the loss of details, further setting were tried for the smoothing. Figures \ref{fig:noisy2}a) and b) show that examples in which the noise is still present after smoothing. \\
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure*}[!h]
+\centering
+\subfloat[]{\includegraphics[height=2 in]{noisyExplL1_3iter}%
+\label{fig_noisyDragonOrig}}
+\hfil
+\subfloat[]{\includegraphics[height=2 in]{noisyExplL2_2iter}%
+\label{fig_implicitCube}}
+\vfil
+\subfloat[]{\includegraphics[height=2 in]{noisyExplL07_5iter}%
+\label{fig_noisyDragonOrig}}
+\hfil
+\subfloat[]{\includegraphics[height=2 in]{noisyImplL2_5iter}%
+\label{fig_implicitCube}}
+\caption{ Experiments with noise: a) Explicit Smoothing - $\lambda = 1$, iterations = 3;  b) Implicit Smoothing - $\lambda = 2$, iterations = 2; c) Explicit Smoothing - $\lambda = 0.7$, iterations = 5; d) Implicit Smoothing - $\lambda = 2$, iterations = 5}
+\label{fig:noisy2}
+\end{figure*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Figure \ref{fig:t4_noisyAnalysis} shows increasing errors for noisy data. however, the algorithm still manages to find a good registration between the two meshes. In this case, the final values of errors cannot really be trusted given the amount of noise that was added as a perturbation on the vertices. 
-
+In conclusion, depending on the amount of noise present, Laplacian smoothing can be used to retrieve the original shape, to some extent. Experiments have to be conducted in order to find the optimal parameters that would recover enough of the high frequency details, whilst removing a reasonable amount of noise. From the above experiments, lower values of lambda with a higher number of iterations lead to better results. However, this would increase the computation time since each iteration goes through the whole mesh.
 
 \end{homeworkProblem}
-\clearpage
-
-%----------------------------------------------------------------------------------------
-
-\begin{homeworkProblem}
-  
-\textbf{ICP convergence analysis with subsampling}\\
-
-The mesh M2 was subsampled by uniformly sampling the point cloud. In the first implementation, every n-th point would be selected for the subsampled mesh. However, the resulting point cloud was truncated or with missing regions. In this implementation, the whole bunny is well represented for percentages of subsampling between 1 and 100 (for example, figure \ref{fig:t5_subsEx}). The M1 mesh remains fixed the whole time and all its points are used in the computation. This allows for good and fast registration even for high subsampling rates. Figure \ref{fig:t5_subsampling} shows the analysis of the algorithm for this approach. ICP manages to correctly align the two point clouds faster, as long as one mesh is kept intact and only one is subsampled.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure*}[!h]
-\centering
-{\includegraphics[height=2in]{task5_subsampled35}%
-\label{fig_t5_subsampled35}}
-\caption{Task 5 - Example of subsampling - 35\%}
-\label{fig:t5_subsEx}
-\end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure*}[!h]
-\centering
-\subfloat[]{\includegraphics[height=2.3in]{task5_errComp}%
-\label{fig_t5_subsErrComp}}
-\hfil
-\subfloat[]{\includegraphics[height=2.3in]{task5_iterationsComp}%
-\label{fig_t5_subsIterComp}}
-\caption{Task 5 - Error analysis for alignment with increasing subsampling rates}
-\label{fig:t5_subsampling}
-\end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\end{homeworkProblem}
-\clearpage
-
-%----------------------------------------------------------------------------------------
-
-\begin{homeworkProblem}
-  
-\textbf{Multi-body Registration}\\
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure*}[!h]
-\centering
-\subfloat[]{\includegraphics[height=2in]{t6_initAlign_no}}%
-\hfil
-\subfloat[]{\includegraphics[height=2in]{t6_initAlign_yes}}%
-\caption{Task 6 - a) no initial alignment; b) the meshes with initial alignment}
-\label{fig:t6_multibody_into}
-\end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure*}[!h]
-\centering
-\subfloat[]{\includegraphics[height=2in]{t6_subs}}%
-\hfil
-\subfloat[]{\includegraphics[height=2in]{t6_pairs}}%
-\caption{Task 6 - a) multi-body ICP with subsampling (Strategy 1); b) multi-body ICP in pairs (Strategy 2)}
-\label{fig:t6_multibody_badex}
-\end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-Several strategies were tried for this task. Initially, I planned on using the functions developed in the previous tasks to make the algorithm faster.\\
-
-Strategy 1:
-\begin{itemize}
-	\item run ICP on the first 2 meshes
-	\item merge the resulting alignment
-	\item subsample mesh M3
-	\item run ICP between the merged mesh and the subsampled version
-	\item go to step 3 and repeat for all the other meshes
-\end{itemize}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure*}[!h]
-\centering
-\subfloat[]{\includegraphics[height=2in]{t6_final_good}}%
-\hfil
-\subfloat[]{\includegraphics[height=2in]{t6_final_bad}}%
-\caption{Task 6 - Multi-body alignment with normals (Strategy 3). a) good alignment between most of the meshes; b) issues with meshes that did not have a good initial alignment or that did not have enough overlapping regions }
-\label{fig:t6_multibody_withNormals}
-\end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Several issues were observed. Firstly, the merged mesh gathers a high number of unnecessary points in overlapping regions. So, the computation time increases very fast, despite the subsampling used in the new meshes. I tried to uniformly subsampling the merged mesh as well. however, the results were not promising, as discussed in Task 5. In this situation, an adaptive algorithm to merge the mesh into a global model should provide better results. Another downside of this approach is that any errors obtained in the first few steps get carried throughout all the alignment steps.\\
-
-
-Strategy 2:
-\begin{itemize}
-	\item keep mesh M1 fixed
-	\item align mesh M2 to M1
-	\item align mesh M3 to the new position of M2
-	\item continue until all the meshes are aligned
-\end{itemize}
-
-This pair-alignment strategy would get rid of the drifting problem caused by the propagation of errors. Better results were obtained than in the first strategy. however, there were still high discontinuities in the final mesh of the bunny.\\
-
-
-
-Strategy 3:
-\begin{itemize}
-	\item keep mesh M1 fixed
-	\item compute normals of all the meshes
-	\item include normals in the ICP
-	\item align meshes pair by pair
-\end{itemize}
-
-
-The third approach to multi-body alignment uses normals to restrain the ICP formulation. The method to compute the normals is described in Task 7. This step is included in te algorithm as a way to reject bad correspondences. If the dot product of the normals is shown to be lower than a threshold, the pair of points is rejected. The aim would be for their dot product to be as close to 1 as possible (parallel normals). The choice of angle for the threshold is detailed in Task 7. In this implementation, normals that were further apart then 5 degrees are discarded. \\
-
-Strategy 3 proved to show the best results with faster computation times, as shown in figure \ref{fig:t6_multibody_withNormals} (the strict threshold on the normals rejects a high number of points). However, not all of the meshes could be aligned perfectly, due to bad initial alignment or insufficient overlapping areas. The errors for the  multi-body alignment of the bunny dataset are:
-\begin{itemize}
-	\item mesh45 - 14 iterations, error = 0.0042
-	\item mesh90 - 13 iterations, error = 0.243
-	\item mesh180 - 7 iterations, error = 0.018
-	\item mesh 270 - 9 iterations, error = 0.035
-	\item mesh315 - 19 iterations, error = 0.124
-\end{itemize} 
-
-
-
-\end{homeworkProblem}
-\clearpage
-
-
-
-%----------------------------------------------------------------------------------------
-\begin{homeworkProblem}
-  
-\textbf{ICP with normals}\\
-
-Normals were estimated at every point in the mesh by following the next steps:
-\begin{itemize}
-	\item for each point p on a mesh
-	\item find its k nearest neighbours 
-	\item compute the covariance matrix and find its eigenvectors
-	\item the normal at point p is the eigenvector corresponding to the smallest eigenvalue
-\end{itemize}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure*}[!h]
-\centering
-\subfloat[]{\includegraphics[height=2in]{t7_bigangle}}%
-\hfil
-\subfloat[]{\includegraphics[height=2in]{t7_lowangle}}%
-\caption{Task 7 - Threshold for the angle between the normals - comparison: a) angle = 30 degrees, error = 1.24, iterations = 13; b) angle = 5 degrees, error = 0.018, iterations = 7}
-\label{fig:t7_angleAnalysis}
-\end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-In this implementation, k was chosen to be 10 in all the iterations. The closest neighbours are found by using kdtrees with the ANN library. A search radius of 5e-05 is used. This value was set empirically because it returns around 250-350 neighbours for a mesh of \~ 40000 vertices. \\
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure*}[!h]
-\centering
-\subfloat[]{\includegraphics[height=1.5in]{t7_m45-90-bad}}%
-\hfil
-\subfloat[]{\includegraphics[height=1.5in]{t7_m45-90-good}}%
-\caption{Task 7 - Alignment bunny45-bunny90: a) bad alignment (error = 0.139) - parameters used: angle for the normal criteria: 5 degrees, distance rejection threshold = 50\%; b) good alignment (error = 0.02) - parameters used: angle for the normal criteria: 5 degrees, distance rejection threshold = 30\% }
-\label{fig:t7_4590meshesEx}
-\end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-Figure \ref{fig:t7_4590meshesEx} illustrates a difficult case of registration. The overlap between bunny45 and bunny90 is not sufficient and leads to erroneous solutions for the final alignment. However, with strict values for the rejection of bad correspondences, a good alignment can be obtained. \\ 
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure*}[!h]
-\centering
-\subfloat[]{\includegraphics[height=1.5in]{t7_nEx_1}}%
-\hfil
-\subfloat[]{\includegraphics[height=1.5in]{t7_nEx_3}}%
-\hfil
-\subfloat[]{\includegraphics[height=1.5in]{t7_nEx_4}}%
-\caption{Task 7 - a) bunny with normals; b) the orientation of several normals is flipped; c) problems with normals at the boundaries }
-\label{fig:t7_problemNormals}
-\end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-So, the smallest eigenvector returns the direction of the normal, but not the orientation. However, for this task, orientation is not necessary. Several other problems appear at the boundaries of the mesh where the plane fit to the k neighbours does not represent the surface well, as shown in figure \ref{fig:t7_problemNormals}.\\
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure*}[!h]
-\centering
-{\includegraphics[height=1in]{swirls}}%
-\caption{Task 7 - Limitation of the current algorithm. If we don't take into consideration the orientation of the normals, this situation will result in a good correspondence between the selected points}
-\label{fig:t7_limitation}
-\end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-The normals were incorporated in ICP as a criterion for the rejection of bad correspondences. For each pair, the dot product of the two normals is computed to obtain the angle between them. Tests were conducted to find an optimal angle for which the convergence is faster and closer to the optimal transformation. This approach improves the accuracy of the final results, given that the remaining correspondences (after the rejection of bad points) are more likely to be correct. Consequently, given that less points will be taken into consideration, the algorithm performs slightly faster. Figure \ref{fig:t7_limitation} illustrates a situation in which this implementation fails. A more robust formulation could be made by including the orientations of the normals. For the moment, a strong assumption is a good initial alignment between the meshes. \\ 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure*}[!h]
-\centering
-\subfloat[]{\includegraphics[height=1.8in]{t7_normal_initAlign}}%
-\hfil
-\subfloat[]{\includegraphics[height=1.8in]{t7_nonormal_fit}}%
-\hfil
-\subfloat[]{\includegraphics[height=1.8in]{t7_normal_fit}}%
-\caption{Task 7 - Alignment bunny00-bunny45: a) initial alignment; b) alignment without normals (error = 0.0042, iterations = 14); c) alignment with normals (error = 0.116, iterations = 32)}
-\label{fig:t7_normalComp}
-\end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{figure*}[!h]
-\centering
-{\includegraphics[height=2.5in]{task7_errComp0045}}%
-\caption{Task 7 - Error comparison (ICP - bunny00 and bunny45) between ICP with normals and without}
-\label{fig:t7_errComp}
-\end{figure*}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-Figure \ref{fig:t7_errComp} shows that ICP with normals converges faster and with lower errors for the alignment between bunny00 and bunny45.
-
-
-\end{homeworkProblem}
-
 
 %----------------------------------------------------------------------------------------
 %\afterpage{\blankpage}

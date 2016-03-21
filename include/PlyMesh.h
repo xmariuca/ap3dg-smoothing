@@ -4,6 +4,12 @@
 #include <Eigen/Dense>
 #include <OpenMesh/Core/IO/MeshIO.hh>
 #include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
+#include <Eigen/Sparse>
+#include <vector>
+#include "defs.h"
+#include <Eigen/IterativeLinearSolvers>
+
+
 
 namespace N3dCW2
 {
@@ -12,8 +18,10 @@ namespace N3dCW2
         typedef OpenMesh::Vec3d Point;
         typedef OpenMesh::Vec3d Normal;
         VertexAttributes( OpenMesh::Attributes::Normal |
-            OpenMesh::Attributes::Color );
-        FaceAttributes( OpenMesh::Attributes::Normal | OpenMesh::Attributes::Color );
+            OpenMesh::Attributes::Color
+        );
+        FaceAttributes( OpenMesh::Attributes::Normal | OpenMesh::Attributes::Color
+        );
     };
     typedef OpenMesh::TriMesh_ArrayKernelT<MyTraits>  MyMesh;
 
@@ -21,32 +29,31 @@ namespace N3dCW2
     {
     public:
         static int meshCount;
-        // PlyMesh();
         PlyMesh(std::string filename);
         PlyMesh(Eigen::MatrixXd& pPointCloud);
         PlyMesh(const PlyMesh&);
         ~PlyMesh();
         PlyMesh& operator= (const PlyMesh &pSrc);
         bool writeMesh(std::string filename);
-        void setNormals(Eigen::MatrixXd& pNormals);
-        void applyTransformation(Eigen::Matrix4d transfMat);
-        void addNoise(double noiseStd);
         void setColour(OpenMesh::Vec3uc colour);
+        void addNoise(double noiseStd);
+        void setColour(Eigen::VectorXd& vals);
         void getVecticesE(Eigen::MatrixXd& outVertMat);
         void setVerticesE(Eigen::MatrixXd newVertPos);
-        void subsample(float degree = 0.5);
-        void computeUniformLaplacian();
-        void getScalingMatrix();
-        // void computeNormals();
+        // void getULTriplets(std::vector<Triplet>& tripletLaplacian, std::vector<Triplet>& tripletValence);
+        // void getScalingTriplets(std::vector<Triplet>& tripletScaling);
         // void getUniformLaplaceBeltrami(Eigen::MatrixXd& uniformLB);
+        void computeGaussianCurvature(Eigen::VectorXd& gaussCurv);
+        void computeMeanCurvature_UL(Eigen::VectorXd& meanCurv);
+        void computeMeanCurvature_LB(Eigen::VectorXd& meanCurv);
+        void getPrincipalCurvatures(Eigen::VectorXd& meanCurv, Eigen::VectorXd& gaussCurv, Eigen::MatrixXd& out_princCurv);
+        void computeExplicitSmoothingUL(double lambda, int numIterations);
+        void computeImplicitSmoothingUL(double lambda, int numIterations);
         uint32_t getTotalVertices() { return m_vertNum;}
 
     private:
         MyMesh m_mesh;
         uint32_t m_vertNum;
-        Eigen::MatrixXd m_uniformLaplacian;
-
-
     };
 
 }//namespace N3dCW2

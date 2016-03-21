@@ -1,22 +1,26 @@
 #ifndef _H_DEF
 #define _H_DEF
 #include <string>
+#include <Eigen/Sparse>
+// #include <vector>
 
 namespace N3dCW2
 {
-    #define TRANSF00_45 1
-    #define TRANSF00_90 2
-    #define TRANSF00_180 3
-    #define TRANSF00_270 4
-    #define TRANSF00_315 5
-    #define TRANSF_45 6
+    #define SUCCESS 0
+    #define ERROR 1
 
-    static const int MESH_NUMBER = 2;
+
+    typedef Eigen::Triplet<double> Triplet;
+    typedef Eigen::SparseMatrix<double,Eigen::RowMajor> SparseMat;
+
     static std::string BASE_PATH = "../src/plyMeshes/";
     static std::string EXTENSION = ".ply";
 
-    static std::string MODEL_1_FILENAME = "../src/plyMeshes/_bunny.ply";
-    static std::string MODEL_2_FILENAME = "../src/plyMeshes/_dragon.ply";
-    static std::string MODEL_3_FILENAME = "../src/plyMeshes/_cube.ply";
+    static std::string BUNNY_MESH = "../src/plyMeshes/_bunny.ply";
+    // static std::string BUNNY_MESH_NOISY = "../src/plyMeshes/noisy.ply";
+
+    static std::string DRAGON_MESH = "../src/plyMeshes/_dragon.ply";
+    static std::string CUBE_MESH = "../src/plyMeshes/_cube.ply";
+    static std::string ARMADILLO_MESH = "../src/plyMeshes/_armadillo.ply";
 }
 #endif

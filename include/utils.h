@@ -9,9 +9,9 @@
 namespace N3dCW2
 {
     void printMessage(std::string text);
-    Eigen::Matrix4d loadTransformation(int transfNo);
+    OpenMesh::Vec3uc getColour(double v, double vmin, double vmax, double median);
+    double getTriangleArea(Eigen::Vector3d& vec1, Eigen::Vector3d& vec2, Eigen::Vector3d& vec3);
     void getColourFromList(int idx,OpenMesh::Vec3uc& outColour);
-    void createRotationMatrix(float rotX, float rotY, float rotZ, Eigen::Matrix3d& rotMat);
 
 }//namespace N3dCW2
 
